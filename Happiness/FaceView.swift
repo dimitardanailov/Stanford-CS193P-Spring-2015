@@ -8,20 +8,28 @@
 
 import UIKit
 
+protocol FaceViewDataSource: class {
+    func smilinessForFaceView(sender: FaceView) -> Double?
+}
+
+@IBDesignable
 class FaceView: UIView
 {
+    @IBInspectable
     var lineWidth: CGFloat = 3 {
         didSet {
             setNeedsDisplay()
         }
     }
     
+    @IBInspectable
     var color: UIColor = UIColor.blueColor() {
         didSet {
             setNeedsDisplay()
         }
     }
     
+    @IBInspectable
     var scale: CGFloat = 0.90 {
         didSet {
             setNeedsDisplay()
@@ -34,6 +42,40 @@ class FaceView: UIView
     
     var faceRadius: CGFloat {
         return (min(bounds.size.width, bounds.size.height) / 2) * scale
+    }
+    
+    weak var dataSource: FaceViewDataSource?
+    
+    override func drawRect(rect: CGRect)
+    {
+        let facePath = UIBezierPath(
+            arcCenter: faceCenter,
+            radius: faceRadius,
+            startAngle: 0,
+            endAngle: CGFloat(2 * M_PI),
+            clockwise: true
+        )
+        facePath.lineWidth = lineWidth
+        color.set()
+        facePath.stroke()
+        
+        bezierPathForEye(.Left).stroke()
+        bezierPathForEye(.Right).stroke()
+        
+        // Nil Coalescing Operator
+        // The nil coalescing operator (a ?? b) unwraps an optional a if it contains a value, or returns a default value b if a is nil. 
+        // The expression a is always of an optional type. The expression b must match the type that is stored inside a.
+        // Source: https://developer.apple.com/library/ios/documentation/Swift/Conceptual/Swift_Programming_Language/BasicOperators.html
+        let smiliness = dataSource?.smilinessForFaceView(self) ?? 0.0
+        let smilePath = bezierPathForSmile(smiliness)
+        smilePath.stroke()
+    }
+    
+    func scale(gesture: UIPinchGestureRecognizer) {
+        if gesture.state == .Changed {
+            scale *= gesture.scale
+            gesture.scale = 1
+        }
     }
     
     private struct Scaling
@@ -97,7 +139,7 @@ class FaceView: UIView
         let controlPoint1 = CGPoint(x: startPoint.x + (mouthWidth / 3), y: startPoint.y + smileHeight)
         let controlPoint2 = CGPoint(x: endPoint.x - (mouthWidth / 3), y: controlPoint1.y)
         
-        // Function declaration: 
+        // Function declaration:
         // func addCurveToPoint(_ endPoint: CGPoint, controlPoint1 controlPoint1: CGPoint, controlPoint2 controlPoint2: CGPoint)
         path.addCurveToPoint(
             endPoint,
@@ -108,26 +150,5 @@ class FaceView: UIView
         path.lineWidth = lineWidth
         
         return path
-    }
-    
-    override func drawRect(rect: CGRect)
-    {
-        let facePath = UIBezierPath(
-            arcCenter: faceCenter,
-            radius: faceRadius,
-            startAngle: 0,
-            endAngle: CGFloat(2 * M_PI),
-            clockwise: true
-        )
-        facePath.lineWidth = lineWidth
-        color.set()
-        facePath.stroke()
-        
-        bezierPathForEye(.Left).stroke()
-        bezierPathForEye(.Right).stroke()
-        
-        let smiliness = 0.75
-        let smilePath = bezierPathForSmile(smiliness)
-        smilePath.stroke()
     }
 }
