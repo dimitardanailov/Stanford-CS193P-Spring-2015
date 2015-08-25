@@ -31,3 +31,9 @@ DerivedData
 # Carthage/Checkouts
 
 Carthage/Build
+
+# Project files
+
+Happiness.xcodeproj/project.xcworkspace/contents.xcworkspacedata
+
+.DS_Store
